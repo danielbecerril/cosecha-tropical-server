@@ -82,12 +82,14 @@ export interface SaleProduct {
   product_id: number;
   quantity: number;
   price: number;
+  cost: number;
 }
 
 export interface SaleProductRequest {
   product_id: number;
   quantity: number;
   price: number;
+  cost: number;
 }
 
 export interface SaleWithProducts extends Sale {

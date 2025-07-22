@@ -132,7 +132,8 @@ export class SaleService {
       sale_id: sale.id,
       product_id: product.product_id,
       quantity: product.quantity,
-      price: product.price
+      price: product.price,
+      cost: product.cost
     }));
 
     const { error: productsError } = await supabase
