@@ -57,4 +57,17 @@ export class SaleController {
       message: 'Sale deleted successfully'
     });
   });
+
+  updateProductPayment = asyncHandler(async (req: Request, res: Response<ApiResponse<any>>) => {
+    const saleId = parseInt(req.params.saleId);
+    const productId = parseInt(req.params.productId);
+    const paymentData = req.body;
+
+    const updatedProduct = await this.saleService.updateProductPayment(saleId, productId, paymentData);
+    res.status(200).json({
+      success: true,
+      data: updatedProduct,
+      message: 'Product payment updated successfully'
+    });
+  });
 }

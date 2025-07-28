@@ -81,6 +81,7 @@ export interface SaleProduct {
   sale_id: number;
   product_id: number;
   quantity: number;
+  quantity_paid?: number;
   price: number;
   cost: number;
 }
@@ -90,6 +91,10 @@ export interface SaleProductRequest {
   quantity: number;
   price: number;
   cost: number;
+}
+
+export interface UpdateProductPaymentRequest {
+  quantity_paid: number;
 }
 
 export interface SaleWithProducts extends Sale {

@@ -1,5 +1,5 @@
 import { supabase } from '../config/database';
-import { Sale, CreateSaleRequest, UpdateSaleRequest, SaleWithProducts } from '../types/database';
+import { Sale, CreateSaleRequest, UpdateSaleRequest, SaleWithProducts, UpdateProductPaymentRequest } from '../types/database';
 import { AppError } from '../middleware/errorHandler';
 import { ProductService } from './productService';
 
@@ -26,7 +26,9 @@ export class SaleService {
           sale_id,
           product_id,
           quantity,
+          quantity_paid,
           price,
+          cost,
           products:product_id (
             id,
             name,
@@ -56,7 +58,9 @@ export class SaleService {
         sale_id: sp.sale_id,
         product_id: sp.product_id,
         quantity: sp.quantity,
+        quantity_paid: sp.quantity_paid || 0,
         price: sp.price,
+        cost: sp.cost,
         product: {
           id: sp.products.id,
           name: sp.products.name,
@@ -82,7 +86,9 @@ export class SaleService {
           sale_id,
           product_id,
           quantity,
+          quantity_paid,
           price,
+          cost,
           products:product_id (
             id,
             name,
@@ -105,6 +111,7 @@ export class SaleService {
       client: data.clients,
       products: data.sale_products?.map((sp: any) => ({
         ...sp,
+        quantity_paid: sp.quantity_paid || 0,
         product: sp.products
       }))
     };
@@ -184,5 +191,66 @@ export class SaleService {
     if (error) {
       throw new AppError(`Failed to delete sale: ${error.message}`, 400);
     }
+  }
+
+  async updateProductPayment(saleId: number, productId: number, paymentData: UpdateProductPaymentRequest): Promise<any> {
+    // First, get the current sale product to validate the quantity
+    const { data: currentProduct, error: fetchError } = await supabase
+      .from('sale_products')
+      .select('quantity, quantity_paid')
+      .eq('sale_id', saleId)
+      .eq('product_id', productId)
+      .single();
+
+    if (fetchError || !currentProduct) {
+      throw new AppError('Sale product not found', 404);
+    }
+
+    const { quantity_paid } = paymentData;
+    const currentQuantity = currentProduct.quantity;
+    const currentQuantityPaid = currentProduct.quantity_paid || 0;
+
+    // Validate that quantity_paid is between 0 and the product's quantity
+    if (quantity_paid < 0 || quantity_paid > currentQuantity) {
+      throw new AppError(`quantity_paid must be between 0 and ${currentQuantity}`, 400);
+    }
+
+    // Update the quantity_paid field
+    const { data, error } = await supabase
+      .from('sale_products')
+      .update({ quantity_paid })
+      .eq('sale_id', saleId)
+      .eq('product_id', productId)
+      .select(`
+        sale_id,
+        product_id,
+        quantity,
+        quantity_paid,
+        price,
+        cost,
+        products:product_id (
+          id,
+          name,
+          image,
+          stock,
+          price,
+          cost
+        )
+      `)
+      .single();
+
+    if (error) {
+      throw new AppError(`Failed to update product payment: ${error.message}`, 400);
+    }
+
+    return {
+      sale_id: data.sale_id,
+      product_id: data.product_id,
+      quantity: data.quantity,
+      quantity_paid: data.quantity_paid,
+      price: data.price,
+      cost: data.cost,
+      product: data.products
+    };
   }
 }
