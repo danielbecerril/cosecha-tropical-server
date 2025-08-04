@@ -66,6 +66,11 @@ export class ClientService {
       .eq('id', id);
 
     if (error) {
+      // Check if it's a foreign key constraint violation (client referenced in sales)
+      if (error.code === '23503' || error.message.includes('violates foreign key constraint') || error.message.includes('is still referenced')) {
+        throw new AppError('Cannot delete client because they are linked to existing sales. Please remove all sales for this client first.', 409);
+      }
+      
       throw new AppError(`Failed to delete client: ${error.message}`, 400);
     }
   }
