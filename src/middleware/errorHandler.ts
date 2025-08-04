@@ -31,12 +31,22 @@ export const errorHandler = (
     message = err.message;
   }
 
-  console.error('Error:', err);
+  // Log the complete error details including stack trace for debugging
+  // But never include stack traces in API responses for security
+  console.error('Error Details:', {
+    message: err.message,
+    statusCode,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+    ...(err instanceof AppError && { isOperational: err.isOperational })
+  });
 
+  // Always return clean error response without stack traces
   res.status(statusCode).json({
     success: false,
-    error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    error: message
   });
 };
 
