@@ -16,21 +16,26 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
     const endTime = process.hrtime.bigint();
     const durationMs = Number(endTime - startTime) / 1_000_000; // ns -> ms
     const statusCode = res.statusCode;
+    const level = statusCode >= 400 ? 'error' : 'info';
 
     // Structured log for easy parsing
-    console.log(
-      JSON.stringify({
-        level: 'info',
-        event: 'http_request',
-        time: new Date().toISOString(),
-        method: requestMethod,
-        url: requestUrl,
-        status: statusCode,
-        durationMs: Number(durationMs.toFixed(1)),
-        ip: requestIp,
-        userAgent
-      })
-    );
+    const logPayload = {
+      level,
+      event: 'http_request',
+      time: new Date().toISOString(),
+      method: requestMethod,
+      url: requestUrl,
+      status: statusCode,
+      durationMs: Number(durationMs.toFixed(1)),
+      ip: requestIp,
+      userAgent
+    };
+
+    if (level === 'error') {
+      console.error(JSON.stringify(logPayload));
+    } else {
+      console.log(JSON.stringify(logPayload));
+    }
   });
 
   next();
