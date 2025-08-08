@@ -4,6 +4,7 @@ export interface Client {
   email: string;
   phone?: string;
   address?: string;
+  type?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -13,6 +14,7 @@ export interface CreateClientRequest {
   email: string;
   phone?: string;
   address?: string;
+  type?: string;
 }
 
 export interface UpdateClientRequest {
@@ -20,6 +22,7 @@ export interface UpdateClientRequest {
   email?: string;
   phone?: string;
   address?: string;
+  type?: string;
 }
 
 export interface Product {
