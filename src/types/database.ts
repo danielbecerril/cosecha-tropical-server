@@ -92,6 +92,7 @@ export interface SaleProduct {
 export interface SaleProductRequest {
   product_id: number;
   quantity: number;
+  quantity_paid?: number;
   price: number;
   cost: number;
 }

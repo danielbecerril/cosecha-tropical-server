@@ -139,6 +139,7 @@ export class SaleService {
       sale_id: sale.id,
       product_id: product.product_id,
       quantity: product.quantity,
+      quantity_paid: product.quantity_paid ?? 0,
       price: product.price,
       cost: product.cost
     }));
