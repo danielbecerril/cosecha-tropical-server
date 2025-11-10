@@ -10,6 +10,62 @@ export class SaleService {
     this.productService = new ProductService();
   }
 
+  async removeProductFromSale(saleId: number, productId: number, quantity: number): Promise<SaleWithProducts> {
+    // Get the sale to ensure it exists and to read current total
+    const { data: sale, error: saleError } = await supabase
+      .from('sales')
+      .select('id, total')
+      .eq('id', saleId)
+      .single();
+
+    if (saleError || !sale) {
+      throw new AppError('Sale not found', 404);
+    }
+
+    // Get the sale product to know quantity and price
+    const { data: saleProduct, error: saleProductError } = await supabase
+      .from('sale_products')
+      .select('sale_id, product_id, quantity, price, quantity_paid')
+      .eq('sale_id', saleId)
+      .eq('product_id', productId)
+      .single();
+
+    if (saleProductError || !saleProduct) {
+      throw new AppError('Product not found in sale', 404);
+    }
+
+    const newQuantity = Math.max(0, saleProduct.quantity - quantity);
+    const newQuantityPaid = Math.max(0, saleProduct.quantity_paid || 0 - quantity);
+    const subtotalToSubtract = quantity * saleProduct.price;
+    const newTotal = Math.max(0, (sale.total || 0) - subtotalToSubtract);
+
+    // Delete the sale_product row
+    const { error: deleteError } = await supabase
+      .from('sale_products')
+      .update({ quantity_paid: newQuantityPaid, quantity: newQuantity, updated_at: new Date().toISOString() })
+      .eq('sale_id', saleId)
+      .eq('product_id', productId);
+
+    if (deleteError) {
+      throw new AppError(`Failed to remove product from sale: ${deleteError.message}`, 400);
+    }
+
+    // Update sale total
+    const { error: updateSaleError } = await supabase
+      .from('sales')
+      .update({ total: newTotal, updated_at: new Date().toISOString() })
+      .eq('id', saleId);
+
+    if (updateSaleError) {
+      throw new AppError(`Failed to update sale total: ${updateSaleError.message}`, 400);
+    }
+
+    // Return removed items back to stock
+    await this.productService.increaseStock(productId, quantity);
+
+    return this.getSaleById(saleId);
+  }
+
   async getAllSales(): Promise<SaleWithProducts[]> {
     const { data, error } = await supabase
       .from('sales')

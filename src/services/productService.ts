@@ -80,4 +80,10 @@ export class ProductService {
 
     return this.updateProduct(id, { stock: newStock });
   }
+
+  async increaseStock(id: number, quantity: number): Promise<Product> {
+    const product = await this.getProductById(id);
+    const newStock = product.stock + quantity;
+    return this.updateProduct(id, { stock: newStock });
+  }
 }

@@ -70,4 +70,16 @@ export class SaleController {
       message: 'Product payment updated successfully'
     });
   });
+
+  removeProductFromSale = asyncHandler(async (req: Request, res: Response<ApiResponse<any>>) => {
+    const saleId = parseInt(req.params.saleId);
+    const productId = parseInt(req.params.productId);
+    const quantity = parseInt(req.params.quantity);
+    const removedProduct = await this.saleService.removeProductFromSale(saleId, productId, quantity);
+    res.status(200).json({
+      success: true,
+      data: removedProduct,
+      message: 'Product removed from sale successfully'
+    });
+  });
 }
