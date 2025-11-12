@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -12,3 +12,13 @@ if (process.env.NODE_ENV === 'production' && (!process.env.SUPABASE_URL || !proc
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const createSupabaseClientWithAuth = (accessToken: string): SupabaseClient => {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
+  });
+};

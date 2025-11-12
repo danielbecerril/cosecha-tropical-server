@@ -2,17 +2,20 @@ import { supabase } from '../config/database';
 import { Sale, CreateSaleRequest, UpdateSaleRequest, SaleWithProducts, UpdateProductPaymentRequest } from '../types/database';
 import { AppError } from '../middleware/errorHandler';
 import { ProductService } from './productService';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export class SaleService {
+  private db: SupabaseClient;
   private productService: ProductService;
 
-  constructor() {
-    this.productService = new ProductService();
+  constructor(supabaseClient?: SupabaseClient) {
+    this.db = supabaseClient || supabase;
+    this.productService = new ProductService(this.db);
   }
 
   async removeProductFromSale(saleId: number, productId: number, quantity: number): Promise<SaleWithProducts> {
     // Get the sale to ensure it exists and to read current total
-    const { data: sale, error: saleError } = await supabase
+    const { data: sale, error: saleError } = await this.db
       .from('sales')
       .select('id, total')
       .eq('id', saleId)
@@ -23,7 +26,7 @@ export class SaleService {
     }
 
     // Get the sale product to know quantity and price
-    const { data: saleProduct, error: saleProductError } = await supabase
+    const { data: saleProduct, error: saleProductError } = await this.db
       .from('sale_products')
       .select('sale_id, product_id, quantity, price, quantity_paid')
       .eq('sale_id', saleId)
@@ -40,7 +43,7 @@ export class SaleService {
     const newTotal = Math.max(0, (sale.total || 0) - subtotalToSubtract);
 
     // Delete the sale_product row
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await this.db
       .from('sale_products')
       .update({ quantity_paid: newQuantityPaid, quantity: newQuantity, updated_at: new Date().toISOString() })
       .eq('sale_id', saleId)
@@ -51,7 +54,7 @@ export class SaleService {
     }
 
     // Update sale total
-    const { error: updateSaleError } = await supabase
+    const { error: updateSaleError } = await this.db
       .from('sales')
       .update({ total: newTotal, updated_at: new Date().toISOString() })
       .eq('id', saleId);
@@ -67,7 +70,7 @@ export class SaleService {
   }
 
   async getAllSales(): Promise<SaleWithProducts[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('sales')
       .select(`
         *,
@@ -127,7 +130,7 @@ export class SaleService {
   }
 
   async getSaleById(id: number): Promise<SaleWithProducts> {
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('sales')
       .select(`
         *,
@@ -173,14 +176,15 @@ export class SaleService {
     };
   }
 
-  async createSale(saleData: CreateSaleRequest): Promise<SaleWithProducts> {
+  async createSale(saleData: CreateSaleRequest, userId?: string): Promise<SaleWithProducts> {
     const { products, ...saleInfo } = saleData;
 
     // Start transaction by creating the sale first
-    const { data: sale, error: saleError } = await supabase
+    const { data: sale, error: saleError } = await this.db
       .from('sales')
       .insert([{
         ...saleInfo,
+        user_id: userId,
         date: saleData.date || new Date().toISOString()
       }])
       .select()
@@ -197,16 +201,17 @@ export class SaleService {
       quantity: product.quantity,
       quantity_paid: product.quantity_paid ?? 0,
       price: product.price,
-      cost: product.cost
+      cost: product.cost,
+      user_id: userId
     }));
 
-    const { error: productsError } = await supabase
+    const { error: productsError } = await this.db
       .from('sale_products')
       .insert(saleProducts);
 
     if (productsError) {
       // Rollback by deleting the sale
-      await supabase.from('sales').delete().eq('id', sale.id);
+      await this.db.from('sales').delete().eq('id', sale.id);
       throw new AppError(`Failed to create sale products: ${productsError.message}`, 400);
     }
 
@@ -216,7 +221,7 @@ export class SaleService {
         await this.productService.updateStock(product.product_id, product.quantity);
       } catch (error) {
         // Rollback by deleting the sale
-        await supabase.from('sales').delete().eq('id', sale.id);
+        await this.db.from('sales').delete().eq('id', sale.id);
         throw error;
       }
     }
@@ -225,7 +230,7 @@ export class SaleService {
   }
 
   async updateSale(id: number, saleData: UpdateSaleRequest): Promise<SaleWithProducts> {
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('sales')
       .update({ ...saleData, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -240,7 +245,7 @@ export class SaleService {
   }
 
   async deleteSale(id: number): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.db
       .from('sales')
       .delete()
       .eq('id', id);
@@ -252,7 +257,7 @@ export class SaleService {
 
   async updateProductPayment(saleId: number, productId: number, paymentData: UpdateProductPaymentRequest): Promise<any> {
     // First, get the current sale product to validate the quantity
-    const { data: currentProduct, error: fetchError } = await supabase
+    const { data: currentProduct, error: fetchError } = await this.db
       .from('sale_products')
       .select('quantity, quantity_paid')
       .eq('sale_id', saleId)
@@ -273,7 +278,7 @@ export class SaleService {
     }
 
     // Update the quantity_paid field
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('sale_products')
       .update({ quantity_paid })
       .eq('sale_id', saleId)

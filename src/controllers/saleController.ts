@@ -3,6 +3,8 @@ import { SaleService } from '../services/saleService';
 import { ApiResponse } from '../types/database';
 import { asyncHandler } from '../middleware/errorHandler';
 import { SaleWithProducts } from '../types/database';
+import { createSupabaseClientWithAuth } from '../config/database';
+import type { AuthenticatedRequest } from '../middleware/authMiddleware';
 
 export class SaleController {
   private saleService: SaleService;
@@ -12,7 +14,9 @@ export class SaleController {
   }
 
   getAllSales = asyncHandler(async (req: Request, res: Response<ApiResponse<any>>) => {
-    const sales: SaleWithProducts[] = await this.saleService.getAllSales();
+    const { authToken } = req as AuthenticatedRequest;
+    const service = authToken ? new SaleService(createSupabaseClientWithAuth(authToken)) : this.saleService;
+    const sales: SaleWithProducts[] = await service.getAllSales();
     res.status(200).json({
       success: true,
       data: sales,
@@ -22,7 +26,9 @@ export class SaleController {
 
   getSaleById = asyncHandler(async (req: Request, res: Response<ApiResponse<any>>) => {
     const id = parseInt(req.params.id);
-    const sale = await this.saleService.getSaleById(id);
+    const { authToken } = req as AuthenticatedRequest;
+    const service = authToken ? new SaleService(createSupabaseClientWithAuth(authToken)) : this.saleService;
+    const sale = await service.getSaleById(id);
     res.status(200).json({
       success: true,
       data: sale,
@@ -31,7 +37,9 @@ export class SaleController {
   });
 
   createSale = asyncHandler(async (req: Request, res: Response<ApiResponse<any>>) => {
-    const sale = await this.saleService.createSale(req.body);
+    const { authToken, user } = req as AuthenticatedRequest;
+    const service = authToken ? new SaleService(createSupabaseClientWithAuth(authToken)) : this.saleService;
+    const sale = await service.createSale(req.body, user?.id);
     res.status(201).json({
       success: true,
       data: sale,
@@ -41,7 +49,9 @@ export class SaleController {
 
   updateSale = asyncHandler(async (req: Request, res: Response<ApiResponse<any>>) => {
     const id = parseInt(req.params.id);
-    const sale = await this.saleService.updateSale(id, req.body);
+    const { authToken } = req as AuthenticatedRequest;
+    const service = authToken ? new SaleService(createSupabaseClientWithAuth(authToken)) : this.saleService;
+    const sale = await service.updateSale(id, req.body);
     res.status(200).json({
       success: true,
       data: sale,
@@ -51,7 +61,9 @@ export class SaleController {
 
   deleteSale = asyncHandler(async (req: Request, res: Response<ApiResponse<any>>) => {
     const id = parseInt(req.params.id);
-    await this.saleService.deleteSale(id);
+    const { authToken } = req as AuthenticatedRequest;
+    const service = authToken ? new SaleService(createSupabaseClientWithAuth(authToken)) : this.saleService;
+    await service.deleteSale(id);
     res.status(200).json({
       success: true,
       message: 'Sale deleted successfully'
@@ -63,7 +75,9 @@ export class SaleController {
     const productId = parseInt(req.params.productId);
     const paymentData = req.body;
 
-    const updatedProduct = await this.saleService.updateProductPayment(saleId, productId, paymentData);
+    const { authToken } = req as AuthenticatedRequest;
+    const service = authToken ? new SaleService(createSupabaseClientWithAuth(authToken)) : this.saleService;
+    const updatedProduct = await service.updateProductPayment(saleId, productId, paymentData);
     res.status(200).json({
       success: true,
       data: updatedProduct,
@@ -75,7 +89,9 @@ export class SaleController {
     const saleId = parseInt(req.params.saleId);
     const productId = parseInt(req.params.productId);
     const quantity = parseInt(req.params.quantity);
-    const removedProduct = await this.saleService.removeProductFromSale(saleId, productId, quantity);
+    const { authToken } = req as AuthenticatedRequest;
+    const service = authToken ? new SaleService(createSupabaseClientWithAuth(authToken)) : this.saleService;
+    const removedProduct = await service.removeProductFromSale(saleId, productId, quantity);
     res.status(200).json({
       success: true,
       data: removedProduct,

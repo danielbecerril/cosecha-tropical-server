@@ -5,6 +5,7 @@ export interface Client {
   phone?: string;
   address?: string;
   type?: string;
+  user_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -15,6 +16,7 @@ export interface CreateClientRequest {
   phone?: string;
   address?: string;
   type?: string;
+  user_id?: string;
 }
 
 export interface UpdateClientRequest {
@@ -32,6 +34,7 @@ export interface Product {
   stock: number;
   price: number;
   cost: number;
+  user_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -42,6 +45,7 @@ export interface CreateProductRequest {
   stock: number;
   price: number;
   cost: number;
+  user_id?: string;
 }
 
 export interface UpdateProductRequest {
@@ -59,6 +63,7 @@ export interface Sale {
   payment_status: string;
   total: number;
   date: string;
+  user_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -69,6 +74,7 @@ export interface CreateSaleRequest {
   payment_status: string;
   total: number;
   date?: string;
+  user_id?: string;
   products: SaleProductRequest[];
 }
 
@@ -87,6 +93,7 @@ export interface SaleProduct {
   quantity_paid?: number;
   price: number;
   cost: number;
+  user_id?: string;
 }
 
 export interface SaleProductRequest {
@@ -95,6 +102,7 @@ export interface SaleProductRequest {
   quantity_paid?: number;
   price: number;
   cost: number;
+  user_id?: string;
 }
 
 export interface UpdateProductPaymentRequest {

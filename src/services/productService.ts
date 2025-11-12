@@ -1,10 +1,17 @@
-import { supabase } from '../config/database';
+import { supabase, createSupabaseClientWithAuth } from '../config/database';
 import { Product, CreateProductRequest, UpdateProductRequest } from '../types/database';
 import { AppError } from '../middleware/errorHandler';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export class ProductService {
+  private db: SupabaseClient;
+
+  constructor(supabaseClient?: SupabaseClient) {
+    this.db = supabaseClient || supabase;
+  }
+
   async getAllProducts(): Promise<Product[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('products')
       .select('*')
       .order('created_at', { ascending: false });
@@ -17,7 +24,7 @@ export class ProductService {
   }
 
   async getProductById(id: number): Promise<Product> {
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('products')
       .select('*')
       .eq('id', id)
@@ -30,10 +37,14 @@ export class ProductService {
     return data;
   }
 
-  async createProduct(productData: CreateProductRequest): Promise<Product> {
-    const { data, error } = await supabase
+  async createProduct(productData: CreateProductRequest, userId?: string): Promise<Product> {
+    const payload = {
+      ...productData,
+      user_id: userId
+    };
+    const { data, error } = await this.db
       .from('products')
-      .insert([productData])
+      .insert([payload])
       .select()
       .single();
 
@@ -45,7 +56,7 @@ export class ProductService {
   }
 
   async updateProduct(id: number, productData: UpdateProductRequest): Promise<Product> {
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('products')
       .update({ ...productData, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -60,7 +71,7 @@ export class ProductService {
   }
 
   async deleteProduct(id: number): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.db
       .from('products')
       .delete()
       .eq('id', id);

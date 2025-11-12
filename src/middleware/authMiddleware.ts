@@ -1,38 +1,45 @@
 import { Request, Response, NextFunction } from 'express';
+import type { User } from '@supabase/supabase-js';
 import { ApiResponse } from '../types/database';
 import { AppError } from './errorHandler';
-
-// Password constant - in production, this should be stored in environment variables
-const API_PASSWORD = 'cosecha-tropical-2025';
+import { supabase } from '../config/database';
 
 export interface AuthenticatedRequest extends Request {
   isAuthenticated?: boolean;
+  user?: User;
+  authToken?: string;
 }
 
-export const authMiddleware = (
+export const authMiddleware = async (
   req: AuthenticatedRequest,
   res: Response<ApiResponse<null>>,
   next: NextFunction
 ) => {
   try {
-    const password = req.headers['x-api-password'] || req.headers['authorization'];
+    const authHeader = req.headers['authorization'];
 
-    if (!password) {
-      throw new AppError('Authentication required. Missing password header.', 401);
+    if (!authHeader || typeof authHeader !== 'string') {
+      throw new AppError('Authentication required. Missing Authorization header.', 401);
     }
 
-    // Remove 'Bearer ' prefix if present
-    const cleanPassword = typeof password === 'string' 
-      ? password.replace(/^Bearer\s+/, '') 
-      : password;
-
-    if (cleanPassword !== API_PASSWORD) {
-      throw new AppError('Invalid password. Access denied.', 401);
+    const match = authHeader.match(/^Bearer\s+(.+)$/i);
+    if (!match) {
+      throw new AppError('Invalid Authorization header format. Expected Bearer token.', 401);
     }
 
-    // Mark request as authenticated
+    const token = match[1];
+
+    // Validate token with Supabase and retrieve the user
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user) {
+      throw new AppError('Invalid or expired token. Access denied.', 401);
+    }
+
+    // Attach auth context to request
     req.isAuthenticated = true;
-    
+    req.user = data.user;
+    req.authToken = token;
+
     next();
   } catch (error) {
     if (error instanceof AppError) {

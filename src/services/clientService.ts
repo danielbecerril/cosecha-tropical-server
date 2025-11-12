@@ -1,10 +1,17 @@
 import { supabase } from '../config/database';
 import { Client, CreateClientRequest, UpdateClientRequest } from '../types/database';
 import { AppError } from '../middleware/errorHandler';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export class ClientService {
+  private db: SupabaseClient;
+
+  constructor(supabaseClient?: SupabaseClient) {
+    this.db = supabaseClient || supabase;
+  }
+
   async getAllClients(): Promise<Client[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('clients')
       .select('*')
       .order('created_at', { ascending: false });
@@ -17,7 +24,7 @@ export class ClientService {
   }
 
   async getClientById(id: number): Promise<Client> {
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('clients')
       .select('*')
       .eq('id', id)
@@ -30,10 +37,11 @@ export class ClientService {
     return data;
   }
 
-  async createClient(clientData: CreateClientRequest): Promise<Client> {
-    const { data, error } = await supabase
+  async createClient(clientData: CreateClientRequest, userId?: string): Promise<Client> {
+    const payload = { ...clientData, user_id: userId };
+    const { data, error } = await this.db
       .from('clients')
-      .insert([clientData])
+      .insert([payload])
       .select()
       .single();
 
@@ -45,7 +53,7 @@ export class ClientService {
   }
 
   async updateClient(id: number, clientData: UpdateClientRequest): Promise<Client> {
-    const { data, error } = await supabase
+    const { data, error } = await this.db
       .from('clients')
       .update({ ...clientData, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -60,7 +68,7 @@ export class ClientService {
   }
 
   async deleteClient(id: number): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.db
       .from('clients')
       .delete()
       .eq('id', id);
