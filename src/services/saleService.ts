@@ -108,6 +108,7 @@ export class SaleService {
       id: sale.id,
       client_id: sale.client_id,
       delivery_method: sale.delivery_method,
+      delivery_cost: sale.delivery_cost,
       payment_status: sale.payment_status,
       total: sale.total,
       date: sale.date,
@@ -177,6 +178,13 @@ export class SaleService {
   }
 
   async createSale(saleData: CreateSaleRequest, userId?: string): Promise<SaleWithProducts> {
+    if (saleData.delivery_method === 'Paquetería' && (saleData.delivery_cost == null || saleData.delivery_cost < 0)) {
+      throw new AppError('delivery_cost is required and must be >= 0 when delivery_method is Paquetería', 400);
+    }
+    if (saleData.delivery_method === 'En Persona' && saleData.delivery_cost != null) {
+      saleData.delivery_cost = undefined;
+    }
+
     const { products, ...saleInfo } = saleData;
 
     // Start transaction by creating the sale first
