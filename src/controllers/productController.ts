@@ -3,27 +3,24 @@ import multer from 'multer';
 import { ProductService } from '../services/productService';
 import { ApiResponse } from '../types/database';
 import { asyncHandler } from '../middleware/errorHandler';
-import { createSupabaseClientWithAuth, supabase } from '../config/database';
+import { createSupabaseClientWithAuth, supabase, supabaseAdmin } from '../config/database';
 import type { AuthenticatedRequest } from '../middleware/authMiddleware';
 
 export const upload = multer({ storage: multer.memoryStorage() });
 
 const BUCKET_NAME = 'cosecha-tropical-media';
 
-async function uploadImageToStorage(
-  file: Express.Multer.File,
-  supabaseClient: ReturnType<typeof createSupabaseClientWithAuth>
-): Promise<string> {
+async function uploadImageToStorage(file: Express.Multer.File): Promise<string> {
   const ext = file.originalname.split('.').pop();
   const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-  const { error } = await supabaseClient.storage
+  const { error } = await supabaseAdmin.storage
     .from(BUCKET_NAME)
     .upload(fileName, file.buffer, { contentType: file.mimetype, upsert: false });
 
   if (error) throw new Error(`Image upload failed: ${error.message}`);
 
-  const { data } = supabaseClient.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+  const { data } = supabaseAdmin.storage.from(BUCKET_NAME).getPublicUrl(fileName);
   return data.publicUrl;
 }
 
@@ -64,7 +61,7 @@ export class ProductController {
 
     let imageUrl: string | undefined;
     if (req.file) {
-      imageUrl = await uploadImageToStorage(req.file, dbClient as ReturnType<typeof createSupabaseClientWithAuth>);
+      imageUrl = await uploadImageToStorage(req.file);
     }
 
     const product = await service.createProduct({ ...req.body, image: imageUrl }, user?.id);
@@ -83,7 +80,7 @@ export class ProductController {
 
     let imageUrl: string | undefined;
     if (req.file) {
-      imageUrl = await uploadImageToStorage(req.file, dbClient as ReturnType<typeof createSupabaseClientWithAuth>);
+      imageUrl = await uploadImageToStorage(req.file);
     }
 
     const product = await service.updateProduct(id, { ...req.body, ...(imageUrl && { image: imageUrl }) });
