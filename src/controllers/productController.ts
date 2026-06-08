@@ -8,7 +8,7 @@ import type { AuthenticatedRequest } from '../middleware/authMiddleware';
 
 export const upload = multer({ storage: multer.memoryStorage() });
 
-const BUCKET_NAME = 'product-images';
+const BUCKET_NAME = 'cosecha-tropical-media';
 
 async function uploadImageToStorage(
   file: Express.Multer.File,
