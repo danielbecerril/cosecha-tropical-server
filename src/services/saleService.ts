@@ -110,6 +110,7 @@ export class SaleService {
       delivery_method: sale.delivery_method,
       delivery_cost: sale.delivery_cost,
       payment_status: sale.payment_status,
+      sale_type: sale.sale_type,
       total: sale.total,
       date: sale.date,
       created_at: sale.created_at,
@@ -185,6 +186,23 @@ export class SaleService {
       saleData.delivery_cost = undefined;
     }
 
+    const saleType = saleData.sale_type ?? 'Venta';
+    saleData.sale_type = saleType;
+
+    if (saleType === 'Muestra') {
+      if (saleData.products.some(p => p.price !== 0)) {
+        throw new AppError('All product prices must be 0 for a Muestra (free sample) sale', 400);
+      }
+      const expectedTotal = saleData.delivery_cost ?? 0;
+      if (saleData.total !== expectedTotal) {
+        throw new AppError('total must equal delivery_cost (or 0) for a Muestra (free sample) sale', 400);
+      }
+      saleData.products = saleData.products.map(p => ({ ...p, quantity_paid: p.quantity }));
+      if (expectedTotal === 0) {
+        saleData.payment_status = 'Pagado';
+      }
+    }
+
     const { products, ...saleInfo } = saleData;
 
     // Start transaction by creating the sale first
@@ -238,6 +256,10 @@ export class SaleService {
   }
 
   async updateSale(id: number, saleData: UpdateSaleRequest): Promise<SaleWithProducts> {
+    if ((saleData as any).sale_type !== undefined) {
+      throw new AppError('sale_type cannot be changed after a sale is created', 400);
+    }
+
     const { data, error } = await this.db
       .from('sales')
       .update({ ...saleData, updated_at: new Date().toISOString() })
