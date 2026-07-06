@@ -463,6 +463,15 @@ Retrieve a specific sale by ID with full details.
 ### POST /sales
 Create a new sale with products.
 
+**Free sample sales (`sale_type: "Muestra"`):**
+- `sale_type` is optional and defaults to `"Venta"` (a normal sale). Set it to `"Muestra"` to record a free sample: products are given away at no cost to the customer but their `cost` is still tracked for financial reporting.
+- When `sale_type` is `"Muestra"`:
+  - Every product in `products` must have `price: 0` (the `cost` field must still be set to the real per-unit cost).
+  - `total` must equal `delivery_cost` (or `0` if there is no delivery cost) — i.e. the sale itself is free, only shipping (if any) can carry a charge.
+  - `quantity_paid` is forced to `quantity` for every line (nothing to collect).
+  - If the resulting `total` is `0`, `payment_status` is forced to `"Pagado"`.
+- `sale_type` cannot be changed via `PUT /sales/:id` once a sale is created.
+
 **Request Body:**
 ```json
 {
@@ -495,6 +504,7 @@ Create a new sale with products.
 
 **Optional Fields:**
 - `date` (string) - Sale date (ISO string, defaults to current date)
+- `sale_type` (string) - `"Venta"` (default) or `"Muestra"` for a free sample sale (see above)
 
 **Response:**
 ```json

@@ -58,12 +58,15 @@ export interface UpdateProductRequest {
 
 export type DeliveryMethod = 'En Persona' | 'Paquetería';
 
+export type SaleType = 'Venta' | 'Muestra';
+
 export interface Sale {
   id: number;
   client_id: number;
   delivery_method: DeliveryMethod;
   delivery_cost?: number;
   payment_status: string;
+  sale_type: SaleType;
   total: number;
   date: string;
   user_id?: string;
@@ -76,6 +79,7 @@ export interface CreateSaleRequest {
   delivery_method: DeliveryMethod;
   delivery_cost?: number;
   payment_status: string;
+  sale_type?: SaleType;
   total: number;
   date?: string;
   user_id?: string;
