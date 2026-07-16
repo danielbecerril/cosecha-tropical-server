@@ -505,6 +505,7 @@ Create a new sale with products.
 **Optional Fields:**
 - `date` (string) - Sale date (ISO string, defaults to current date)
 - `sale_type` (string) - `"Venta"` (default) or `"Muestra"` for a free sample sale (see above)
+- `payment_method` (string) - How the customer paid: `"Efectivo"`, `"Transferencia"`, or `"Tarjeta"`
 
 **Response:**
 ```json
