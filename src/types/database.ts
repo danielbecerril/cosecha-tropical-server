@@ -60,12 +60,15 @@ export type DeliveryMethod = 'En Persona' | 'Paquetería';
 
 export type SaleType = 'Venta' | 'Muestra';
 
+export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta';
+
 export interface Sale {
   id: number;
   client_id: number;
   delivery_method: DeliveryMethod;
   delivery_cost?: number;
   payment_status: string;
+  payment_method?: PaymentMethod;
   sale_type: SaleType;
   total: number;
   date: string;
@@ -79,6 +82,7 @@ export interface CreateSaleRequest {
   delivery_method: DeliveryMethod;
   delivery_cost?: number;
   payment_status: string;
+  payment_method?: PaymentMethod;
   sale_type?: SaleType;
   total: number;
   date?: string;
@@ -91,6 +95,7 @@ export interface UpdateSaleRequest {
   delivery_method?: DeliveryMethod;
   delivery_cost?: number;
   payment_status?: string;
+  payment_method?: PaymentMethod;
   total?: number;
   date?: string;
 }
