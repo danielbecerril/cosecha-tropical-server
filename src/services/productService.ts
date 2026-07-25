@@ -37,9 +37,27 @@ export class ProductService {
     return data;
   }
 
+  // Snaps case/whitespace variants of a brand onto the spelling already on
+  // file (e.g. "MANGO LOCO" -> "Mango Loco"), so the same brand never
+  // fragments into multiple entries by typo of case alone.
+  private async canonicalizeBrand(brand: string | null | undefined): Promise<string | null | undefined> {
+    if (brand === undefined) return undefined;
+    const trimmed = brand?.trim();
+    if (!trimmed) return null;
+
+    const { data } = await this.db
+      .from('products')
+      .select('brand')
+      .ilike('brand', trimmed.replace(/[%_]/g, '\\$&'))
+      .limit(1);
+
+    return data?.[0]?.brand ?? trimmed;
+  }
+
   async createProduct(productData: CreateProductRequest, userId?: string): Promise<Product> {
     const payload = {
       ...productData,
+      brand: await this.canonicalizeBrand(productData.brand),
       user_id: userId
     };
     const { data, error } = await this.db
@@ -56,9 +74,14 @@ export class ProductService {
   }
 
   async updateProduct(id: number, productData: UpdateProductRequest): Promise<Product> {
+    const payload = {
+      ...productData,
+      ...('brand' in productData ? { brand: await this.canonicalizeBrand(productData.brand) } : {}),
+      updated_at: new Date().toISOString()
+    };
     const { data, error } = await this.db
       .from('products')
-      .update({ ...productData, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq('id', id)
       .select()
       .single();

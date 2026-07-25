@@ -240,6 +240,7 @@ Retrieve all products.
       "stock": 10,
       "price": 999.99,
       "cost": 750.00,
+      "brand": "Acme",
       "created_at": "2025-07-18T19:33:09.395Z",
       "updated_at": "2025-07-18T19:33:09.395Z"
     }
@@ -265,6 +266,7 @@ Retrieve a specific product by ID.
     "stock": 10,
     "price": 999.99,
     "cost": 750.00,
+    "brand": "Acme",
     "created_at": "2025-07-18T19:33:09.395Z",
     "updated_at": "2025-07-18T19:33:09.395Z"
   },
@@ -282,7 +284,8 @@ Create a new product.
   "image": "https://example.com/laptop.jpg",
   "stock": 10,
   "price": 999.99,
-  "cost": 750.00
+  "cost": 750.00,
+  "brand": "Acme"
 }
 ```
 
@@ -294,6 +297,7 @@ Create a new product.
 
 **Optional Fields:**
 - `image` (string) - Product image URL
+- `brand` (string) - Product brand. Trimmed; an empty string or omitted value is stored as `null` ("no brand"). If it matches an existing brand case-insensitively, it is stored using that brand's existing spelling (e.g. `"ACME"` is stored as `"Acme"` if that's already on file), so brand names never fragment by case or stray whitespace alone.
 
 **Response:**
 ```json
@@ -306,6 +310,7 @@ Create a new product.
     "stock": 10,
     "price": 999.99,
     "cost": 750.00,
+    "brand": "Acme",
     "created_at": "2025-07-18T19:33:09.395Z",
     "updated_at": "2025-07-18T19:33:09.395Z"
   },
@@ -325,11 +330,12 @@ Update an existing product.
   "name": "Gaming Laptop",
   "stock": 5,
   "price": 1299.99,
-  "cost": 950.00
+  "cost": 950.00,
+  "brand": "Acme"
 }
 ```
 
-**All fields are optional for updates.**
+**All fields are optional for updates.** `brand` is normalized the same way as on create; omit it to leave the product's brand unchanged, or send `""` to clear it back to "no brand".
 
 **Response:**
 ```json
@@ -342,6 +348,7 @@ Update an existing product.
     "stock": 5,
     "price": 1299.99,
     "cost": 950.00,
+    "brand": "Acme",
     "created_at": "2025-07-18T19:33:09.395Z",
     "updated_at": "2025-07-18T19:33:09.395Z"
   },
