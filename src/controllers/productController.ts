@@ -24,6 +24,22 @@ async function uploadImageToStorage(file: Express.Multer.File): Promise<string> 
   return data.publicUrl;
 }
 
+// multer puts every field in req.body as a string, so numeric fields need
+// coercion and an empty brand ("" from an unbranded multipart submit) must
+// become null rather than being stored as a literal empty string — otherwise
+// "Sin marca" would fragment into two different values across the table.
+function normalizeProductBody(body: any) {
+  const out: any = { ...body };
+  if ('brand' in out) {
+    const trimmed = typeof out.brand === 'string' ? out.brand.trim() : out.brand;
+    out.brand = trimmed ? trimmed : null;
+  }
+  for (const key of ['stock', 'price', 'cost'] as const) {
+    if (out[key] !== undefined && out[key] !== '') out[key] = Number(out[key]);
+  }
+  return out;
+}
+
 export class ProductController {
   private productService: ProductService;
 
@@ -64,7 +80,7 @@ export class ProductController {
       imageUrl = await uploadImageToStorage(req.file);
     }
 
-    const product = await service.createProduct({ ...req.body, image: imageUrl }, user?.id);
+    const product = await service.createProduct({ ...normalizeProductBody(req.body), image: imageUrl }, user?.id);
     res.status(201).json({
       success: true,
       data: product,
@@ -83,7 +99,7 @@ export class ProductController {
       imageUrl = await uploadImageToStorage(req.file);
     }
 
-    const product = await service.updateProduct(id, { ...req.body, ...(imageUrl && { image: imageUrl }) });
+    const product = await service.updateProduct(id, { ...normalizeProductBody(req.body), ...(imageUrl && { image: imageUrl }) });
     res.status(200).json({
       success: true,
       data: product,

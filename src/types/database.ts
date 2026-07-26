@@ -34,6 +34,7 @@ export interface Product {
   stock: number;
   price: number;
   cost: number;
+  brand?: string | null;
   user_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -45,6 +46,7 @@ export interface CreateProductRequest {
   stock: number;
   price: number;
   cost: number;
+  brand?: string | null;
   user_id?: string;
 }
 
@@ -54,6 +56,7 @@ export interface UpdateProductRequest {
   stock?: number;
   price?: number;
   cost?: number;
+  brand?: string | null;
 }
 
 export type DeliveryMethod = 'En Persona' | 'Paquetería';

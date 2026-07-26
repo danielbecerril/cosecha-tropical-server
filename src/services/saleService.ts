@@ -94,7 +94,8 @@ export class SaleService {
             image,
             stock,
             price,
-            cost
+            cost,
+            brand
           )
         )
       `)
@@ -125,7 +126,8 @@ export class SaleService {
         product: {
           id: sp.products.id,
           name: sp.products.name,
-          price: sp.products.price
+          price: sp.products.price,
+          brand: sp.products.brand ?? null
         }
       }))
     })) || [];
@@ -156,7 +158,8 @@ export class SaleService {
             image,
             stock,
             price,
-            cost
+            cost,
+            brand
           )
         )
       `)
