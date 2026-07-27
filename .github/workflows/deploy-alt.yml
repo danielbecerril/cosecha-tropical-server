@@ -1,0 +1,29 @@
+name: Deploy to Fly.io (alt)
+
+on:
+  push:
+    branches:
+      # Any branch whose name contains "alt" (including nested refs like feature/my-alt-branch)
+      - '**alt**'
+
+concurrency:
+  group: deploy-alt
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy alt app
+    # Safety net so only branches containing "alt" can ever deploy to the alt app
+    if: contains(github.ref_name, 'alt')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        # --app overrides the app name in fly.toml so production is never touched
+        run: flyctl deploy --remote-only --app cosecha-tropical-server-alt
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
