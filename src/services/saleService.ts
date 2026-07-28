@@ -53,10 +53,31 @@ export class SaleService {
       throw new AppError(`Failed to remove product from sale: ${deleteError.message}`, 400);
     }
 
-    // Update sale total
+    // Once every product on the sale has been returned, mark the sale itself
+    // as returned so it stops showing up as pending/paid revenue.
+    const { data: remainingProducts, error: remainingError } = await this.db
+      .from('sale_products')
+      .select('quantity')
+      .eq('sale_id', saleId);
+
+    if (remainingError) {
+      throw new AppError(`Failed to check remaining sale products: ${remainingError.message}`, 400);
+    }
+
+    const fullyReturned = (remainingProducts || []).every(sp => sp.quantity === 0);
+
+    const saleUpdate: { total: number; updated_at: string; payment_status?: string } = {
+      total: newTotal,
+      updated_at: new Date().toISOString()
+    };
+    if (fullyReturned) {
+      saleUpdate.payment_status = 'Devuelto';
+    }
+
+    // Update sale total (and status, if fully returned)
     const { error: updateSaleError } = await this.db
       .from('sales')
-      .update({ total: newTotal, updated_at: new Date().toISOString() })
+      .update(saleUpdate)
       .eq('id', saleId);
 
     if (updateSaleError) {
