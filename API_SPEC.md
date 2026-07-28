@@ -479,6 +479,10 @@ Create a new sale with products.
   - If the resulting `total` is `0`, `payment_status` is forced to `"Pagado"`.
 - `sale_type` cannot be changed via `PUT /sales/:id` once a sale is created.
 
+**Returned sales (`payment_status: "Devuelto"`):**
+- `"Devuelto"` is not selected at creation time; it's set automatically once every product on a sale has been returned via `DELETE /sales/:saleId/products/:productId/:quantity`.
+- Partial returns (some, but not all, quantity removed) leave `payment_status` unchanged.
+
 **Request Body:**
 ```json
 {
