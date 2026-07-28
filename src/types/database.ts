@@ -63,6 +63,11 @@ export type DeliveryMethod = 'En Persona' | 'Paquetería';
 
 export type SaleType = 'Venta' | 'Muestra';
 
+// 'Devuelto' is set automatically once every product on a sale has been
+// returned (see SaleService.removeProductFromSale); it isn't user-selectable
+// at sale creation the way 'Pagado'/'Por pagar' are.
+export type PaymentStatus = 'Pagado' | 'Por pagar' | 'Devuelto';
+
 export type PaymentMethod = 'Efectivo' | 'Transferencia' | 'Tarjeta';
 
 export interface Sale {
