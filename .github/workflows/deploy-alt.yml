@@ -26,6 +26,6 @@ jobs:
         # --app overrides the app name in fly.toml so production is never touched.
         # --region overrides fly.toml's primary_region (qro), which is deprecated
         # and rejects new machine provisioning for this app's first deploy.
-        run: flyctl deploy --remote-only --app cosecha-tropical-server-alt --region dfw
+        run: flyctl deploy --remote-only --app cosecha-tropical-server-alt --primary-region dfw
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
