@@ -372,6 +372,97 @@ Delete a product.
 
 ---
 
+## Discounts
+
+A reusable catalog of discounts that can be created ahead of time and selected at the moment of sale. Applying one to a sale snapshots it into that sale's `discount` field (see `POST /sales`) — editing or deleting the catalog entry afterward does not change past sales.
+
+### GET /discounts
+Retrieve all discounts.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Cliente frecuente",
+      "type": "percentage",
+      "value": 10,
+      "active": true,
+      "created_at": "2026-09-09T00:00:00.000Z",
+      "updated_at": "2026-09-09T00:00:00.000Z"
+    }
+  ],
+  "message": "Discounts retrieved successfully"
+}
+```
+
+### GET /discounts/:id
+Retrieve a specific discount by ID.
+
+**Parameters:**
+- `id` (number, required) - Discount ID
+
+### POST /discounts
+Create a new discount.
+
+**Request Body:**
+```json
+{
+  "name": "Cliente frecuente",
+  "type": "percentage",
+  "value": 10
+}
+```
+
+**Required Fields:**
+- `name` (string) - Discount name, shown wherever it's selected or displayed
+- `type` (string) - `"percentage"` (value is a % of the subtotal) or `"quantity"` (value is a fixed currency amount off)
+- `value` (number) - Must be greater than 0
+
+**Optional Fields:**
+- `active` (boolean) - Defaults to `true`. Set to `false` to keep a discount for historical reference without offering it at sale time.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Cliente frecuente",
+    "type": "percentage",
+    "value": 10,
+    "active": true,
+    "created_at": "2026-09-09T00:00:00.000Z",
+    "updated_at": "2026-09-09T00:00:00.000Z"
+  },
+  "message": "Discount created successfully"
+}
+```
+
+### PUT /discounts/:id
+Update an existing discount. All fields are optional.
+
+**Parameters:**
+- `id` (number, required) - Discount ID
+
+### DELETE /discounts/:id
+Delete a discount. Sales that already applied it keep their own snapshot in `discount` untouched.
+
+**Parameters:**
+- `id` (number, required) - Discount ID
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Discount deleted successfully"
+}
+```
+
+---
+
 ## Sales
 
 ### GET /sales
@@ -517,6 +608,7 @@ Create a new sale with products.
 - `date` (string) - Sale date (ISO string, defaults to current date)
 - `sale_type` (string) - `"Venta"` (default) or `"Muestra"` for a free sample sale (see above)
 - `payment_method` (string) - How the customer paid: `"Efectivo"`, `"Transferencia"`, or `"Tarjeta"`
+- `discount` (object) - A snapshot of the catalog discount (see `POST /discounts`) applied to this sale, or omitted/`null` if none. Shape: `{ "id": 1, "name": "Cliente frecuente", "type": "percentage", "value": 10, "amount_off": 25.50 }`. `amount_off` is the actual currency amount deducted and must be pre-computed by the client from `type`/`value` and the sale's subtotal — the server stores it as-is for the ticket rather than recalculating it. Cannot be changed via `PUT /sales/:id`.
 
 **Response:**
 ```json
