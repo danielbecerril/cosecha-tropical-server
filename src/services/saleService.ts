@@ -133,6 +133,7 @@ export class SaleService {
       delivery_cost: sale.delivery_cost,
       payment_status: sale.payment_status,
       sale_type: sale.sale_type,
+      discount: sale.discount,
       total: sale.total,
       date: sale.date,
       created_at: sale.created_at,
@@ -227,6 +228,13 @@ export class SaleService {
       }
     }
 
+    if (saleData.discount != null) {
+      const { name, type, value, amount_off } = saleData.discount;
+      if (!name || (type !== 'percentage' && type !== 'quantity') || typeof value !== 'number' || typeof amount_off !== 'number' || amount_off < 0) {
+        throw new AppError('discount must have a name, type of "percentage" or "quantity", a numeric value, and a numeric amount_off >= 0', 400);
+      }
+    }
+
     const { products, ...saleInfo } = saleData;
 
     // Start transaction by creating the sale first
@@ -282,6 +290,9 @@ export class SaleService {
   async updateSale(id: number, saleData: UpdateSaleRequest): Promise<SaleWithProducts> {
     if ((saleData as any).sale_type !== undefined) {
       throw new AppError('sale_type cannot be changed after a sale is created', 400);
+    }
+    if ((saleData as any).discount !== undefined) {
+      throw new AppError('discount cannot be changed after a sale is created', 400);
     }
 
     const { data, error } = await this.db
