@@ -132,6 +132,7 @@ export class SaleService {
       delivery_method: sale.delivery_method,
       delivery_cost: sale.delivery_cost,
       payment_status: sale.payment_status,
+      payment_method: sale.payment_method,
       sale_type: sale.sale_type,
       discount: sale.discount,
       total: sale.total,
