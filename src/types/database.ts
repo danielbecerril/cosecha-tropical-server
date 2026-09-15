@@ -59,6 +59,46 @@ export interface UpdateProductRequest {
   brand?: string | null;
 }
 
+export type DiscountType = 'percentage' | 'quantity';
+
+export interface Discount {
+  id: number;
+  name: string;
+  type: DiscountType;
+  value: number;
+  active: boolean;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateDiscountRequest {
+  name: string;
+  type: DiscountType;
+  value: number;
+  active?: boolean;
+  user_id?: string;
+}
+
+export interface UpdateDiscountRequest {
+  name?: string;
+  type?: DiscountType;
+  value?: number;
+  active?: boolean;
+}
+
+// Snapshot of a discount as applied to a specific sale, stored in
+// sales.discount (JSONB). amount_off is the actual currency amount
+// deducted, precomputed at sale time so the ticket doesn't need to
+// re-derive it from the (possibly since-changed) catalog discount.
+export interface AppliedDiscount {
+  id?: number;
+  name: string;
+  type: DiscountType;
+  value: number;
+  amount_off: number;
+}
+
 export type DeliveryMethod = 'En Persona' | 'Paquetería';
 
 export type SaleType = 'Venta' | 'Muestra';
@@ -78,6 +118,7 @@ export interface Sale {
   payment_status: string;
   payment_method?: PaymentMethod;
   sale_type: SaleType;
+  discount?: AppliedDiscount | null;
   total: number;
   date: string;
   user_id?: string;
@@ -92,6 +133,7 @@ export interface CreateSaleRequest {
   payment_status: string;
   payment_method?: PaymentMethod;
   sale_type?: SaleType;
+  discount?: AppliedDiscount | null;
   total: number;
   date?: string;
   user_id?: string;
