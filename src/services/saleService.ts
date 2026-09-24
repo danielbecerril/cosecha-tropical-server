@@ -132,7 +132,9 @@ export class SaleService {
       delivery_method: sale.delivery_method,
       delivery_cost: sale.delivery_cost,
       payment_status: sale.payment_status,
+      payment_method: sale.payment_method,
       sale_type: sale.sale_type,
+      discount: sale.discount,
       total: sale.total,
       date: sale.date,
       created_at: sale.created_at,
@@ -227,6 +229,13 @@ export class SaleService {
       }
     }
 
+    if (saleData.discount != null) {
+      const { name, type, value, amount_off } = saleData.discount;
+      if (!name || (type !== 'percentage' && type !== 'quantity') || typeof value !== 'number' || typeof amount_off !== 'number' || amount_off < 0) {
+        throw new AppError('discount must have a name, type of "percentage" or "quantity", a numeric value, and a numeric amount_off >= 0', 400);
+      }
+    }
+
     const { products, ...saleInfo } = saleData;
 
     // Start transaction by creating the sale first
@@ -283,6 +292,9 @@ export class SaleService {
     if ((saleData as any).sale_type !== undefined) {
       throw new AppError('sale_type cannot be changed after a sale is created', 400);
     }
+    if ((saleData as any).discount !== undefined) {
+      throw new AppError('discount cannot be changed after a sale is created', 400);
+    }
 
     const { data, error } = await this.db
       .from('sales')
@@ -299,6 +311,18 @@ export class SaleService {
   }
 
   async deleteSale(id: number): Promise<void> {
+    // Fetch before deleting — sale_products cascades away with the sale, and
+    // its quantity already accounts for any prior partial returns (those
+    // returned units were given back to stock at return time).
+    const { data: saleProducts, error: fetchError } = await this.db
+      .from('sale_products')
+      .select('product_id, quantity')
+      .eq('sale_id', id);
+
+    if (fetchError) {
+      throw new AppError(`Failed to fetch sale products: ${fetchError.message}`, 400);
+    }
+
     const { error } = await this.db
       .from('sales')
       .delete()
@@ -306,6 +330,13 @@ export class SaleService {
 
     if (error) {
       throw new AppError(`Failed to delete sale: ${error.message}`, 400);
+    }
+
+    // Restore whatever stock this sale still held.
+    for (const sp of saleProducts || []) {
+      if (sp.quantity > 0) {
+        await this.productService.increaseStock(sp.product_id, sp.quantity);
+      }
     }
   }
 

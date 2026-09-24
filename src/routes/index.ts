@@ -2,6 +2,7 @@ import { Router } from 'express';
 import clientRoutes from './clientRoutes';
 import productRoutes from './productRoutes';
 import saleRoutes from './saleRoutes';
+import discountRoutes from './discountRoutes';
 import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -10,6 +11,7 @@ const router = Router();
 router.use('/clients', authMiddleware, clientRoutes);
 router.use('/products', authMiddleware, productRoutes);
 router.use('/sales', authMiddleware, saleRoutes);
+router.use('/discounts', authMiddleware, discountRoutes);
 
 // Health check endpoint (no authentication required)
 router.get('/health', (req, res) => {
