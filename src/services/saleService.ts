@@ -311,6 +311,18 @@ export class SaleService {
   }
 
   async deleteSale(id: number): Promise<void> {
+    // Fetch before deleting — sale_products cascades away with the sale, and
+    // its quantity already accounts for any prior partial returns (those
+    // returned units were given back to stock at return time).
+    const { data: saleProducts, error: fetchError } = await this.db
+      .from('sale_products')
+      .select('product_id, quantity')
+      .eq('sale_id', id);
+
+    if (fetchError) {
+      throw new AppError(`Failed to fetch sale products: ${fetchError.message}`, 400);
+    }
+
     const { error } = await this.db
       .from('sales')
       .delete()
@@ -318,6 +330,13 @@ export class SaleService {
 
     if (error) {
       throw new AppError(`Failed to delete sale: ${error.message}`, 400);
+    }
+
+    // Restore whatever stock this sale still held.
+    for (const sp of saleProducts || []) {
+      if (sp.quantity > 0) {
+        await this.productService.increaseStock(sp.product_id, sp.quantity);
+      }
     }
   }
 
